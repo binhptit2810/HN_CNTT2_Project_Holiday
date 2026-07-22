@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{base :: header('Quản lý tài khoản')}"></head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header / Navbar -->
+    <nav th:replace="~{base :: navbar}"></nav>
+
+    <!-- Main Content Container -->
+    <div class="flex-1 max-w-7xl mx-auto w-full px-4 py-8 space-y-6">
+        
+        <!-- Title and Stats -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/60 backdrop-blur rounded-2xl p-6 border border-white/20 gap-4">
+            <div>
+                <h1 class="text-2xl font-black text-gray-800 tracking-tight">Quản lý Tài khoản Hệ thống</h1>
+                <p class="text-xs text-gray-500 mt-1">Danh sách nhân viên, khách hàng và cấu hình trạng thái truy cập.</p>
+            </div>
+            <div class="flex gap-4">
+                <div class="bg-white/80 p-3 px-5 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <span class="block text-xs text-gray-400 font-bold uppercase tracking-wider">Tổng số tài khoản</span>
+                    <span class="text-lg font-black text-orange-500" th:text="${users.size()}">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div th:if="${success != null}" class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-green-500 text-lg"></i>
+            <span class="text-sm font-medium text-green-700" th:text="${success}"></span>
+        </div>
+        <div th:if="${error != null}" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-red-500 text-lg"></i>
+            <span class="text-sm font-medium text-red-700" th:text="${error}"></span>
+        </div>
+
+        <!-- Accounts Table Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            <th class="py-4 px-6">ID</th>
+                            <th class="py-4 px-6">Tài khoản</th>
+                            <th class="py-4 px-6">Họ và tên</th>
+                            <th class="py-4 px-6">Vai trò</th>
+                            <th class="py-4 px-6">Liên hệ</th>
+                            <th class="py-4 px-6 text-center">Trạng thái</th>
+                            <th class="py-4 px-6 text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50 text-sm">
+                        <tr th:each="u : ${users}" class="hover:bg-slate-50/50 transition-colors">
+                            <!-- ID -->
+                            <td class="py-4 px-6 font-bold text-gray-400" th:text="'#' + ${u.id}"></td>
+                            
+                            <!-- Username -->
+                            <td class="py-4 px-6">
+                                <span class="font-bold text-gray-800 block" th:text="${u.username}"></span>
+                            </td>
+
+                            <!-- Full Name -->
+                            <td class="py-4 px-6">
+                                <span class="text-gray-700 font-medium" th:text="${u.fullName ?: '-'}"></span>
+                            </td>
+
+                            <!-- Role -->
+                            <td class="py-4 px-6">
+                                <span class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md"
+                                      th:classappend="${
+                                          u.role.name() == 'ADMIN' ? 'bg-orange-50 text-orange-700 border border-orange-100' :
+                                          u.role.name() == 'WAITER' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                          u.role.name() == 'CASHIER' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                                          u.role.name() == 'KITCHEN' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                                          'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                      }"
+                                      th:text="${u.role.name()}"></span>
+                            </td>
+
+                            <!-- Contacts -->
+                            <td class="py-4 px-6 space-y-0.5 text-xs">
+                                <div class="flex items-center gap-1.5 text-gray-600">
+                                    <i class="fa-solid fa-phone text-[10px] text-gray-400"></i>
+                                    <span th:text="${u.phone ?: '-'}"></span>
+                                </div>
+                                <div th:if="${u.email != null && !u.email.isEmpty()}" class="flex items-center gap-1.5 text-gray-500">
+                                    <i class="fa-solid fa-envelope text-[10px] text-gray-400"></i>
+                                    <span class="max-w-[150px] truncate" th:text="${u.email}"></span>
+                                </div>
+                            </td>
+
+                            <!-- Active Status -->
+                            <td class="py-4 px-6 text-center">
+                                <span class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                                      th:classappend="${u.active == null || u.active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                                    <span class="w-1.5 h-1.5 rounded-full" th:classappend="${u.active == null || u.active ? 'bg-emerald-500' : 'bg-rose-500'}"></span>
+                                    <span th:text="${u.active == null || u.active ? 'Hoạt động' : 'Bị khóa'}"></span>
+                                </span>
+                                <span class="block text-[10px] text-red-500 font-semibold mt-1" 
+                                      th:if="${u.active != null && !u.active && u.lockReason != null}" 
+                                      th:text="'Lý do: ' + ${u.lockReason}"></span>
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="py-4 px-6 text-center">
+                                <div class="flex justify-center items-center gap-2" th:if="${u.id != user.id}">
+                                    
+                                    <!-- Toggle lock form -->
+                                    <form th:action="@{/admin/users/{id}/toggle-active(id=${u.id})}" method="POST"
+                                          th:id="'form-toggle-' + ${u.id}"
+                                          th:onsubmit="'return handleToggleActive(event, ' + ${u.id} + ', ' + (${u.active == null || u.active}) + ')'">
+                                        <input type="hidden" name="reason" th:id="'reason-' + ${u.id}">
+                                        <button type="submit" 
+                                                class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+                                                th:classappend="${u.active == null || u.active ? 'border-amber-200 text-amber-600 bg-amber-50/20 hover:bg-amber-500 hover:text-white' : 'border-emerald-200 text-emerald-600 bg-emerald-50/20 hover:bg-emerald-500 hover:text-white'}">
+                                            <i class="fa-solid" th:classappend="${u.active == null || u.active ? 'fa-user-slash' : 'fa-user-check'}"></i>
+                                            <span th:text="${u.active == null || u.active ? 'Khóa' : 'Mở khóa'}"></span>
+                                        </button>
+                                    </form>
+
+                                    <!-- Delete form -->
+                                    <form th:action="@{/admin/users/{id}/delete(id=${u.id})}" method="POST"
+                                          th:id="'form-delete-' + ${u.id}"
+                                          th:onsubmit="'return handleDeleteUser(event, ' + ${u.id} + ')'">
+                                        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold border border-rose-200 text-rose-600 bg-rose-50/20 hover:bg-rose-500 hover:text-white transition-all">
+                                            <i class="fa-solid fa-trash-can"></i> Xóa
+                                        </button>
+                                    </form>
+
+                                </div>
+                                <span class="text-xs text-gray-400 font-semibold" th:if="${u.id == user.id}">Tài khoản của bạn</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function handleToggleActive(event, userId, isActive) {
+            event.preventDefault();
+            const form = document.getElementById('form-toggle-' + userId);
+            
+            if (isActive) {
+                window.customPrompt(
+                    "Khóa tài khoản", 
+                    "Vui lòng nhập lý do khóa tài khoản này:", 
+                    "Ví dụ: Vi phạm quy định...",
+                    function(reason) {
+                        if (!reason || reason.trim() === "") {
+                            window.customAlert("Cảnh báo", "Lý do khóa không được để trống!", "danger");
+                            return;
+                        }
+                        document.getElementById('reason-' + userId).value = reason;
+                        form.submit();
+                    }
+                );
+            } else {
+                window.customConfirm(
+                    "Mở khóa tài khoản", 
+                    "Bạn có chắc chắn muốn mở khóa tài khoản này không?", 
+                    function() {
+                        form.submit();
+                    }
+                );
+            }
+            return false;
+        }
+
+        function handleDeleteUser(event, userId) {
+            event.preventDefault();
+            const form = document.getElementById('form-delete-' + userId);
+            window.customConfirm(
+                "Xóa tài khoản",
+                "HÀNH ĐỘNG NÀY KHÔNG THỂ KHÔI PHỤC! Bạn có thực sự muốn XÓA tài khoản này khỏi hệ thống không?",
+                function() {
+                    form.submit();
+                },
+                null,
+                'danger'
+            );
+            return false;
+        }
+    </script>
+</body>
+</html>

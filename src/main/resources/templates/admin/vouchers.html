@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{base :: header('Mã giảm giá')}"></head>
+<body class="bg-slate-50 min-h-screen">
+
+    <nav th:replace="~{base :: navbar}"></nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Alerts Block -->
+        <div th:if="${success != null}" class="mb-6 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-lg"></i>
+            <span class="text-sm font-semibold text-emerald-800" th:text="${success}"></span>
+        </div>
+        <div th:if="${error != null}" class="mb-6 bg-rose-50 border-l-4 border-rose-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-rose-500 text-lg"></i>
+            <span class="text-sm font-semibold text-rose-800" th:text="${error}"></span>
+        </div>
+
+        <!-- Title -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Quản lý Khuyến mãi</h1>
+                <p class="text-sm text-gray-500 mt-1">Tạo và thiết lập các mã giảm giá, voucher cho nhà hàng.</p>
+            </div>
+            
+            <button onclick="openVoucherModal()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-4 rounded-xl text-sm flex items-center gap-1.5 shadow transition-colors">
+                <i class="fa-solid fa-plus"></i> Tạo mã giảm giá mới
+            </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <h2 class="text-lg font-extrabold text-gray-900 mb-4 flex items-center gap-2"><i class="fa-solid fa-tags text-orange-500"></i> Danh sách Mã giảm giá</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                    <thead>
+                        <tr class="text-xs uppercase font-extrabold text-gray-400 border-b border-gray-100 bg-gray-50/50">
+                            <th class="px-4 py-3">Mã Code</th>
+                            <th class="px-4 py-3 text-right">Giảm giá</th>
+                            <th class="px-4 py-3 text-right">ĐK Áp dụng</th>
+                            <th class="px-4 py-3 text-center">Hiệu lực</th>
+                            <th class="px-4 py-3 text-center">Trạng thái</th>
+                            <th class="px-4 py-3 text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr th:each="voucher : ${vouchers}" class="hover:bg-slate-50/50">
+                            <td class="px-4 py-3">
+                                <span class="font-bold text-gray-800 tracking-wider text-base" th:text="${voucher.code}"></span>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <span th:if="${voucher.discountType.name() == 'FIXED_AMOUNT'}" class="font-bold text-rose-500" th:text="'-' + ${#numbers.formatDecimal(voucher.discountValue, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                <span th:if="${voucher.discountType.name() == 'PERCENTAGE'}" class="font-bold text-rose-500">
+                                    -<span th:text="${voucher.discountValue}"></span>%
+                                    <br><span th:if="${voucher.maxDiscountAmount != null}" class="text-[10px] text-gray-400 font-medium">Tối đa: <span th:text="${#numbers.formatDecimal(voucher.maxDiscountAmount, 0, 'COMMA', 0, 'POINT')}"></span>đ</span>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right text-gray-500 text-xs">
+                                <span th:if="${voucher.minOrderValue != null}">Đơn từ <span th:text="${#numbers.formatDecimal(voucher.minOrderValue, 0, 'COMMA', 0, 'POINT')}"></span>đ</span>
+                                <span th:if="${voucher.minOrderValue == null}">Mọi đơn hàng</span>
+                            </td>
+                            <td class="px-4 py-3 text-center text-xs text-gray-500">
+                                <div th:if="${voucher.validFrom != null}" th:text="'Từ: ' + ${#temporals.format(voucher.validFrom, 'dd/MM/yyyy HH:mm')}"></div>
+                                <div th:if="${voucher.validTo != null}" th:text="'Đến: ' + ${#temporals.format(voucher.validTo, 'dd/MM/yyyy HH:mm')}"></div>
+                                <div th:if="${voucher.validFrom == null && voucher.validTo == null}">Không giới hạn</div>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <span th:if="${voucher.active}" class="px-2 py-0.5 bg-emerald-100 text-emerald-700 font-bold text-[10px] rounded">ĐANG HOẠT ĐỘNG</span>
+                                <span th:unless="${voucher.active}" class="px-2 py-0.5 bg-gray-100 text-gray-500 font-bold text-[10px] rounded">BỊ KHÓA</span>
+                            </td>
+                            <td class="px-4 py-3 text-center flex justify-center gap-2">
+                                <form th:action="@{/admin/vouchers/toggle}" method="POST" class="inline">
+                                    <input type="hidden" name="id" th:value="${voucher.id}">
+                                    <button type="submit" class="p-1.5 bg-slate-100 hover:bg-slate-200 text-gray-600 rounded-lg text-xs" title="Khóa/Mở khóa">
+                                        <i class="fa-solid fa-power-off"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/admin/vouchers/delete}" method="POST" class="inline" onsubmit="return confirm('Bạn có chắc muốn xóa vĩnh viễn mã giảm giá này?');">
+                                    <input type="hidden" name="id" th:value="${voucher.id}">
+                                    <button type="submit" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg text-xs" title="Xóa">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${vouchers.empty}">
+                            <td colspan="6" class="px-4 py-8 text-center text-gray-400">
+                                Chưa có mã giảm giá nào.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Voucher Modal -->
+    <div id="voucherModal" class="fixed inset-0 z-50 overflow-y-auto hidden flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onclick="closeVoucherModal()"></div>
+        <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 border border-slate-100">
+            <h3 class="text-xl font-extrabold text-gray-900 mb-6 flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center text-sm"><i class="fa-solid fa-ticket"></i></div>
+                Tạo mã giảm giá mới
+            </h3>
+            
+            <form th:action="@{/admin/vouchers/add}" method="POST" class="space-y-4 text-sm">
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Mã Code <span class="text-red-500">*</span></label>
+                    <input type="text" name="code" required placeholder="VD: TET2026" class="w-full bg-slate-50 border border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-orange-500 focus:bg-white uppercase">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Loại giảm giá <span class="text-red-500">*</span></label>
+                        <select name="discountType" id="discountTypeSelect" required onchange="toggleMaxDiscount()" class="w-full bg-slate-50 border border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-orange-500 focus:bg-white">
+                            <option value="PERCENTAGE">Phần trăm (%)</option>
+                            <option value="FIXED_AMOUNT">Tiền mặt (VNĐ)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Mức giảm <span class="text-red-500">*</span></label>
+                        <input type="number" name="discountValue" required min="0" step="1" placeholder="VD: 10 hoặc 50000" class="w-full bg-slate-50 border border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-orange-500 focus:bg-white">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Đơn tối thiểu (VNĐ)</label>
+                        <input type="number" name="minOrderValue" min="0" step="1000" placeholder="0 = Bất kỳ" class="w-full bg-slate-50 border border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-orange-500 focus:bg-white">
+                    </div>
+                    <div id="maxDiscountDiv">
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Giảm tối đa (VNĐ)</label>
+                        <input type="number" name="maxDiscountAmount" id="maxDiscountInput" min="0" step="1000" placeholder="Tùy chọn" class="w-full bg-slate-50 border border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-orange-500 focus:bg-white">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Có hiệu lực từ</label>
+                        <input type="datetime-local" name="validFrom" class="w-full bg-slate-50 border border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-orange-500 focus:bg-white text-xs">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Hết hiệu lực</label>
+                        <input type="datetime-local" name="validTo" class="w-full bg-slate-50 border border-gray-200 rounded-xl py-2 px-3 outline-none focus:border-orange-500 focus:bg-white text-xs">
+                    </div>
+                </div>
+
+                <div class="pt-4 mt-6 border-t border-gray-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeVoucherModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-gray-700 rounded-xl font-bold transition-colors">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-colors">Tạo Mã Code</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        function openVoucherModal() {
+            document.getElementById('voucherModal').classList.remove('hidden');
+        }
+
+        function closeVoucherModal() {
+            document.getElementById('voucherModal').classList.add('hidden');
+        }
+        
+        function toggleMaxDiscount() {
+            const type = document.getElementById('discountTypeSelect').value;
+            const maxDiv = document.getElementById('maxDiscountDiv');
+            const maxInput = document.getElementById('maxDiscountInput');
+            if (type === 'FIXED_AMOUNT') {
+                maxDiv.style.opacity = '0.5';
+                maxInput.disabled = true;
+                maxInput.value = '';
+            } else {
+                maxDiv.style.opacity = '1';
+                maxInput.disabled = false;
+            }
+        }
+        
+        // Initial setup
+        toggleMaxDiscount();
+    </script>
+</body>
+</html>

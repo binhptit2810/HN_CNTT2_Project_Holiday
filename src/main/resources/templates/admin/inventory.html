@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{base :: header('Quản lý kho nguyên vật liệu')}"></head>
+<body class="bg-slate-50 min-h-screen">
+
+    <nav th:replace="~{base :: navbar}"></nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Alerts Block -->
+        <div th:if="${success != null}" class="mb-6 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-lg"></i>
+            <span class="text-sm font-semibold text-emerald-800" th:text="${success}"></span>
+        </div>
+        <div th:if="${error != null}" class="mb-6 bg-rose-50 border-l-4 border-rose-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-rose-500 text-lg"></i>
+            <span class="text-sm font-semibold text-rose-800" th:text="${error}"></span>
+        </div>
+
+        <!-- Title -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Quản lý kho nguyên vật liệu</h1>
+                <p class="text-sm text-gray-500 mt-1">Theo dõi số lượng tồn thực tế, cập nhật nhập kho và thiết lập cảnh báo định mức.</p>
+            </div>
+            
+            <button onclick="openAddIngModal()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-4 rounded-xl text-sm flex items-center gap-1.5 shadow transition-colors">
+                <i class="fa-solid fa-plus"></i> Định nghĩa nguyên liệu mới
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Side: Ingredients Table (2/3 width) -->
+            <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                <h2 class="text-lg font-extrabold text-gray-900 mb-4 flex items-center gap-2"><i class="fa-solid fa-boxes-stacked text-orange-500"></i> Bảng tồn kho nguyên liệu</h2>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left">
+                        <thead>
+                            <tr class="text-xs uppercase font-extrabold text-gray-400 border-b border-gray-100 bg-gray-50/50">
+                                <th class="px-4 py-3">Tên nguyên liệu</th>
+                                <th class="px-4 py-3 text-right">Tồn kho thực tế</th>
+                                <th class="px-4 py-3 text-right">Ngưỡng cảnh báo</th>
+                                <th class="px-4 py-3 text-center">Đơn vị</th>
+                                <th class="px-4 py-3 text-center">Trạng thái</th>
+                                <th class="px-4 py-3 text-center">Nhập kho</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr th:each="ing : ${ingredients}" class="hover:bg-slate-50/50"
+                                th:classappend="${ing.quantityInStock <= ing.reorderLevel ? 'bg-rose-50/30' : ''}">
+                                <td class="px-4 py-3.5 font-bold text-gray-800" th:text="${ing.name}"></td>
+                                <td class="px-4 py-3.5 text-right font-extrabold" 
+                                    th:classappend="${ing.quantityInStock <= ing.reorderLevel ? 'text-rose-600' : 'text-gray-900'}"
+                                    th:text="${ing.quantityInStock}"></td>
+                                <td class="px-4 py-3.5 text-right text-gray-400" th:text="${ing.reorderLevel}"></td>
+                                <td class="px-4 py-3.5 text-center text-gray-500 font-bold" th:text="${ing.unit}"></td>
+                                <td class="px-4 py-3.5 text-center">
+                                    <span class="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md"
+                                          th:classappend="${ing.quantityInStock <= ing.reorderLevel ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}"
+                                          th:text="${ing.quantityInStock <= ing.reorderLevel ? 'Cần nhập hàng' : 'An toàn'}"></span>
+                                </td>
+                                <td class="px-4 py-3.5 text-center">
+                                    <button th:data-id="${ing.id}"
+                                            th:data-name="${ing.name}"
+                                            th:data-unit="${ing.unit}"
+                                            onclick="openImportModal(this.getAttribute('data-id'), this.getAttribute('data-name'), this.getAttribute('data-unit'))"
+                                            class="bg-orange-50 hover:bg-orange-100 text-orange-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+                                        <i class="fa-solid fa-truck-ramp-box mr-1"></i> Nhập kho
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Side: Inventory Advice & Logs (1/3 width) -->
+            <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm h-fit">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-question text-orange-400"></i> Nguyên tắc quản lý kho (FIFO)
+                </h3>
+                <div class="text-xs text-gray-500 space-y-3">
+                    <p>Hệ thống hỗ trợ quản lý kho theo nguyên tắc **Nhập trước - Xuất trước (First In, First Out)**.</p>
+                    <p>Hãy duy trì tồn kho nguyên liệu cao hơn **Ngưỡng cảnh báo**. Khi tồn kho xuống dưới ngưỡng này, hệ thống sẽ cảnh báo đỏ tại Dashboard của quản lý để nhập hàng kịp thời.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Define New Ingredient Modal -->
+    <div id="addIngModal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeAddIngModal()"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-left border border-slate-100 transform transition-all duration-300">
+                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked text-orange-500"></i> Định nghĩa nguyên liệu
+                </h3>
+                <form th:action="@{/admin/inventory/add}" method="POST" class="space-y-4">
+                    <div>
+                        <label for="ingName" class="block text-xs font-bold text-gray-700 uppercase mb-1">Tên nguyên liệu</label>
+                        <input type="text" id="ingName" name="name" required
+                               class="block w-full rounded-xl border border-gray-200 py-2.5 px-3 text-sm outline-none focus:border-orange-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="ingQty" class="block text-xs font-bold text-gray-700 uppercase mb-1">Số lượng đầu</label>
+                            <input type="number" step="0.01" id="ingQty" name="quantity" required min="0" value="0"
+                                   class="block w-full rounded-xl border border-gray-200 py-2.5 px-3 text-sm outline-none focus:border-orange-500">
+                        </div>
+                        <div>
+                            <label for="ingUnit" class="block text-xs font-bold text-gray-700 uppercase mb-1">Đơn vị tính</label>
+                            <input type="text" id="ingUnit" name="unit" required placeholder="kg, lít, lon..."
+                                   class="block w-full rounded-xl border border-gray-200 py-2.5 px-3 text-sm outline-none focus:border-orange-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="ingReorder" class="block text-xs font-bold text-gray-700 uppercase mb-1">Ngưỡng cảnh báo tối thiểu</label>
+                        <input type="number" step="0.01" id="ingReorder" name="reorderLevel" required min="0" value="5"
+                               class="block w-full rounded-xl border border-gray-200 py-2.5 px-3 text-sm outline-none focus:border-orange-500">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" onclick="closeAddIngModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-gray-700 rounded-lg text-xs font-semibold">Hủy</button>
+                        <button type="submit" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold">Tạo nguyên liệu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Stock Modal -->
+    <div id="importModal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeImportModal()"></div>
+            <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-left border border-slate-100 transform transition-all duration-300">
+                <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-truck-ramp-box text-orange-500"></i> Nhập kho nguyên liệu
+                </h3>
+                <form th:action="@{/admin/inventory/update-stock}" method="POST" class="space-y-4">
+                    <input type="hidden" id="importIngIdInput" name="id">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Nguyên liệu nhập</label>
+                        <span id="importIngNameLabel" class="font-extrabold text-gray-800 text-base"></span>
+                    </div>
+                    <div>
+                        <label for="addedStock" class="block text-xs font-bold text-gray-700 uppercase mb-1">Số lượng nhập thêm</label>
+                        <div class="relative">
+                            <input type="number" step="0.01" id="addedStock" name="addedStock" required min="0.01"
+                                   class="block w-full rounded-xl border border-gray-200 py-2.5 px-3 text-sm outline-none focus:border-orange-500 pr-12">
+                            <span id="importIngUnitLabel" class="absolute inset-y-0 right-0 pr-4 flex items-center text-sm font-bold text-gray-400"></span>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button type="button" onclick="closeImportModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-gray-700 rounded-lg text-xs font-semibold">Hủy</button>
+                        <button type="submit" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-semibold">Xác nhận nhập kho</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openAddIngModal() {
+            document.getElementById('addIngModal').classList.remove('hidden');
+        }
+
+        function closeAddIngModal() {
+            document.getElementById('addIngModal').classList.add('hidden');
+        }
+
+        function openImportModal(id, name, unit) {
+            document.getElementById('importIngIdInput').value = id;
+            document.getElementById('importIngNameLabel').innerText = name;
+            document.getElementById('importIngUnitLabel').innerText = unit;
+            document.getElementById('importModal').classList.remove('hidden');
+        }
+
+        // Close imports modal
+        function closeImportModal() {
+            document.getElementById('importModal').classList.add('hidden');
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{base :: header('GỌI MÓN ONLINE - Bàn ' + ${table.tableNumber})}"></head>
+<body class="bg-gradient-to-br from-amber-50/20 via-orange-50/20 to-slate-50 min-h-screen flex flex-col">
+
+    <!-- Header bar -->
+    <nav class="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl font-black text-orange-500 flex items-center gap-1">
+                        <i class="fa-solid fa-utensils"></i> RMS QR
+                    </span>
+                    <span class="text-xs bg-orange-100 text-orange-700 font-extrabold px-2.5 py-1 rounded-md" th:text="'BÀN #' + ${table.tableNumber}"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="offlineBadge" class="hidden text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded animate-pulse">
+                        <i class="fa-solid fa-wifi-slash mr-1"></i> Lưu cục bộ
+                    </span>
+                    <span id="onlineBadge" class="text-xs bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded">
+                        <i class="fa-solid fa-circle mr-1"></i> Trực tuyến
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Success/Error Toasts -->
+        <div th:if="${success != null}" class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg flex items-center gap-3 w-full">
+            <i class="fa-solid fa-circle-check text-green-500 text-lg"></i>
+            <span class="text-sm font-semibold text-green-800" th:text="${success}"></span>
+        </div>
+        <div th:if="${error != null}" class="mb-6 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg flex items-center gap-3 w-full">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-lg"></i>
+            <span class="text-sm font-semibold text-amber-800" th:text="${error}"></span>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- Left Side: Menu Items -->
+            <div class="flex-1 flex flex-col gap-6">
+                
+                <!-- Category and Filter Bar -->
+                <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="relative w-full sm:w-72">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="searchInput" oninput="filterMenu()"
+                               class="pl-10 block w-full rounded-xl border border-gray-200 py-2.5 px-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                               placeholder="Tìm nhanh (gõ viết tắt)...">
+                    </div>
+
+                    <div class="flex gap-1.5 overflow-x-auto w-full sm:w-auto scrollbar-none pb-1 sm:pb-0">
+                        <button onclick="filterCategory('ALL')" id="catBtn-ALL" class="cat-btn bg-orange-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all">
+                            Tất cả
+                        </button>
+                        <button th:each="cat : ${T(com.attraction.quanlinhahang.model.MenuItem.Category).values()}" 
+                                th:data-cat="${cat.name()}"
+                                onclick="filterCategory(this.getAttribute('data-cat'))"
+                                th:id="'catBtn-' + ${cat.name()}"
+                                class="cat-btn bg-slate-100 hover:bg-slate-200 text-gray-600 font-semibold px-4 py-2 rounded-xl text-sm transition-all"
+                                th:text="${
+                                    cat.name() == 'APPETIZER' ? 'Khai vị' : 
+                                    (cat.name() == 'MAIN' ? 'Món chính' : 
+                                    (cat.name() == 'DRINK' ? 'Đồ uống' : 'Tráng miệng'))
+                                }"></button>
+                    </div>
+                </div>
+
+                <!-- Menu Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="menuGrid">
+                    <div th:each="item : ${menuItems}" 
+                         th:data-category="${item.category.name()}"
+                         th:data-name="${item.name}"
+                         class="menu-item-card bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col justify-between group hover:shadow-md transition-shadow">
+                        
+                        <!-- Image Area -->
+                        <div class="relative h-44 w-full bg-slate-100 overflow-hidden border-b border-gray-50">
+                            <img th:src="${item.imageUrl != null && item.imageUrl != '' ? item.imageUrl : 'https://placehold.co/600x400?text=Food'}" 
+                                 th:alt="${item.name}"
+                                 onerror="this.src='https://placehold.co/600x400?text=No+Image+Available'"
+                                 class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        </div>
+
+                        <div class="p-5">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-orange-500 bg-orange-50 px-2.5 py-1 rounded-md"
+                                          th:text="${
+                                              item.category.name() == 'APPETIZER' ? 'Khai vị' : 
+                                              (item.category.name() == 'MAIN' ? 'Món chính' : 
+                                              (item.category.name() == 'DRINK' ? 'Đồ uống' : 'Tráng miệng'))
+                                          }"></span>
+                                    <h3 class="text-lg font-bold text-gray-800 mt-2" th:text="${item.name}"></h3>
+                                </div>
+                                <span class="text-base font-extrabold text-orange-600" th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2 line-clamp-2" th:text="${item.description}"></p>
+                        </div>
+
+                        <div class="p-5 pt-0">
+                            <button th:if="${item.status.name() == 'AVAILABLE'}"
+                                    th:attr="data-id=${item.id},data-name=${item.name},data-price=${item.price}"
+                                    onclick="handleAddToCartClick(event)"
+                                    class="w-full bg-slate-100 hover:bg-orange-500 hover:text-white text-gray-700 font-bold py-2.5 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-plus text-xs"></i> Chọn món này
+                            </button>
+                            <button th:if="${item.status.name() == 'OUT_OF_STOCK'}" disabled
+                                    class="w-full bg-gray-100 text-gray-400 cursor-not-allowed font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-ban"></i> Tạm hết món
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Side: Order Request / Basket -->
+            <div class="w-full md:w-96 flex flex-col gap-6">
+                <!-- Basket Panel -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col h-[400px] justify-between">
+                    
+                    <div>
+                        <div class="flex justify-between items-center pb-4 border-b border-gray-100 mb-4">
+                            <h2 class="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+                                <i class="fa-solid fa-basket-shopping text-orange-500"></i> Danh sách món chọn
+                            </h2>
+                        </div>
+
+                        <!-- Cart Container -->
+                        <div id="cartItemsContainer" class="flex-1 overflow-y-auto h-44 space-y-3 pr-1 scrollbar-none">
+                            <div id="emptyCartMessage" class="text-center py-12 text-gray-400 text-sm flex flex-col items-center justify-center gap-2">
+                                <i class="fa-solid fa-basket-shopping text-3xl"></i>
+                                Bấm chọn món bên trái để thêm vào danh sách
+                            </div>
+                            <!-- Items Sub-container -->
+                            <div id="cartItemsList" class="space-y-3"></div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Summary -->
+                    <div class="border-t border-gray-100 pt-4">
+                        <div class="flex justify-between items-center text-sm font-bold text-gray-700 mb-4">
+                            <span>Tổng tạm tính:</span>
+                            <span id="cartTotalText" class="text-lg font-extrabold text-orange-600">0 đ</span>
+                        </div>
+
+                        <button th:onclick="${isUserDirect != null && isUserDirect} ? 'submitDirectOrder()' : 'submitQrRequest()'" 
+                                id="btnSubmitRequest" disabled
+                                class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all duration-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-paper-plane"></i> 
+                            <span th:text="${isUserDirect != null && isUserDirect} ? 'GỬI BẾP CHẾ BIẾN NGAY' : 'GỬI YÊU CẦU GỌI MÓN'"></span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Active Order Status & Payment Panel -->
+                <div th:if="${order != null}" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col gap-4">
+                    <h2 class="text-lg font-extrabold text-gray-900 flex items-center gap-2 pb-3 border-b border-gray-100">
+                        <i class="fa-solid fa-clock-rotate-left text-orange-500"></i> Món ăn đã gọi
+                    </h2>
+                    
+                    <!-- Order Details List -->
+                    <div class="max-h-48 overflow-y-auto space-y-2">
+                        <div th:each="det : ${orderDetails}" class="flex justify-between text-xs py-1.5 px-2 bg-slate-50 rounded-lg">
+                            <div>
+                                <span class="font-bold text-gray-800" th:text="${det.menuItem.name}"></span>
+                                <!-- Status Badge for Customer -->
+                                <span class="block mt-0.5 text-[9px] font-extrabold uppercase"
+                                      th:classappend="${
+                                          det.status.name() == 'PENDING' ? 'text-blue-500' :
+                                          det.status.name() == 'COOKING' ? 'text-amber-500' :
+                                          det.status.name() == 'READY' ? 'text-emerald-500' :
+                                          det.status.name() == 'SERVED' ? 'text-gray-400' : 'text-rose-500'
+                                      }"
+                                      th:text="${
+                                          det.status.name() == 'PENDING' ? 'Chờ bếp' :
+                                          det.status.name() == 'COOKING' ? 'Đang nấu...' :
+                                          det.status.name() == 'READY' ? 'Nấu xong - Đang bưng' :
+                                          det.status.name() == 'SERVED' ? 'Đã phục vụ' : 'Đã hủy'
+                                      }"></span>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-bold text-gray-600" th:text="'x' + ${det.quantity}"></span>
+                                <span class="block text-[9px] text-gray-400 font-bold" th:text="${#numbers.formatDecimal(det.unitPrice * det.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Action Button -->
+                    <div class="border-t border-gray-100 pt-4" th:if="${table.status.name() == 'OCCUPIED' && !#lists.isEmpty(orderDetails)}"
+                         th:with="hasUnserved=${!#lists.isEmpty(orderDetails.?[status.name() == 'PENDING' || status.name() == 'COOKING' || status.name() == 'READY'])}">
+                         
+                        <div th:if="${hasUnserved}" class="bg-slate-50 border border-slate-200 text-slate-500 p-3.5 rounded-xl text-center flex flex-col items-center justify-center gap-1">
+                            <i class="fa-solid fa-hourglass-half text-lg text-slate-400"></i>
+                            <span class="text-xs font-black">Chưa thể thanh toán</span>
+                            <span class="text-[10px]">Vui lòng đợi tất cả các món được phục vụ xong.</span>
+                        </div>
+
+                        <th:block th:if="${!hasUnserved}">
+                            <!-- Nếu khách chưa gửi yêu cầu thanh toán -->
+                            <form th:if="${table.paymentRequested == null || !table.paymentRequested}" 
+                                  th:action="@{/customer/order/{num}/request-payment(num=${table.tableNumber})}" method="POST"
+                                  id="payment-form"
+                                  onsubmit="return handlePaymentRequest(event)">
+                                <button type="submit" class="w-full bg-rose-500 hover:bg-rose-600 text-white font-extrabold py-3 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 text-sm uppercase">
+                                    <i class="fa-solid fa-bell-concierge"></i> Yêu cầu Thanh toán
+                                </button>
+                            </form>
+
+                            <!-- Nếu khách đang chờ thanh toán -->
+                            <div th:if="${table.paymentRequested != null && table.paymentRequested}" 
+                                 class="bg-amber-50 border border-amber-200 text-amber-800 p-3.5 rounded-xl text-center flex flex-col items-center justify-center gap-1">
+                                <i class="fa-solid fa-spinner animate-spin text-lg text-amber-600"></i>
+                                <span class="text-xs font-black">Đang chờ nhân viên tới thanh toán...</span>
+                                <span class="text-[10px] text-gray-500">Chúng tôi đang chuẩn bị hóa đơn của bạn.</span>
+                            </div>
+                        </th:block>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script th:inline="javascript">
+        let cart = {};
+        const tableNumber = [[${table.tableNumber}]];
+
+        // Offline check & monitor
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+
+        function updateNetworkStatus() {
+            if (navigator.onLine) {
+                document.getElementById('onlineBadge').classList.remove('hidden');
+                document.getElementById('offlineBadge').classList.add('hidden');
+                syncOfflineRequests();
+            } else {
+                document.getElementById('onlineBadge').classList.add('hidden');
+                document.getElementById('offlineBadge').classList.remove('hidden');
+            }
+        }
+
+        function handleAddToCartClick(event) {
+            const btn = event.currentTarget;
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            const price = parseFloat(btn.getAttribute('data-price'));
+            addToCart(id, name, price);
+        }
+
+        function addToCart(id, name, price) {
+            if (cart[id]) {
+                cart[id].quantity += 1;
+            } else {
+                cart[id] = {
+                    id: id,
+                    name: name,
+                    price: price,
+                    quantity: 1,
+                    note: ""
+                };
+            }
+            renderCart();
+        }
+
+        function changeQty(id, delta) {
+            if (!cart[id]) return;
+            cart[id].quantity += delta;
+            if (cart[id].quantity <= 0) {
+                delete cart[id];
+            }
+            renderCart();
+        }
+
+        function updateNote(id, noteValue) {
+            if (!cart[id]) return;
+            cart[id].note = noteValue;
+        }
+
+        function renderCart() {
+            const listContainer = document.getElementById('cartItemsList');
+            listContainer.innerHTML = "";
+ 
+            const keys = Object.keys(cart);
+            if (keys.length === 0) {
+                document.getElementById('emptyCartMessage').classList.remove('hidden');
+                document.getElementById('cartTotalText').innerText = "0 đ";
+                document.getElementById('btnSubmitRequest').disabled = true;
+                return;
+            }
+ 
+            document.getElementById('emptyCartMessage').classList.add('hidden');
+            let total = 0;
+ 
+            keys.forEach(id => {
+                const item = cart[id];
+                total += item.price * item.quantity;
+ 
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "bg-orange-50/40 border border-orange-100/60 rounded-xl p-3 space-y-2";
+                itemDiv.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold text-gray-800 text-sm">${item.name}</span>
+                        <span class="font-extrabold text-orange-600 text-sm">${(item.price * item.quantity).toLocaleString('vi-VN')} đ</span>
+                    </div>
+                    <div class="flex justify-between items-center gap-2">
+                        <input type="text" placeholder="Ghi chú thêm..." 
+                               oninput="updateNote(${item.id}, this.value)" 
+                               value="${item.note}"
+                               class="flex-1 bg-white border border-gray-100 rounded-lg py-1 px-2.5 text-xs outline-none">
+                        <div class="flex items-center gap-2 bg-white border border-gray-100 px-2 py-0.5 rounded-lg">
+                            <button onclick="changeQty(${item.id}, -1)" class="text-orange-500 font-bold px-1 text-xs"><i class="fa-solid fa-minus"></i></button>
+                            <span class="font-bold text-gray-700 text-xs">${item.quantity}</span>
+                            <button onclick="changeQty(${item.id}, 1)" class="text-orange-500 font-bold px-1 text-xs"><i class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+ 
+            document.getElementById('cartTotalText').innerText = total.toLocaleString('vi-VN') + " đ";
+            document.getElementById('btnSubmitRequest').disabled = false;
+        }
+
+        async function submitQrRequest() {
+            if (!navigator.onLine) {
+                // Save offline
+                const offline = JSON.parse(localStorage.getItem('offline_qr_requests') || '[]');
+                offline.push({ tableNumber, cart });
+                localStorage.setItem('offline_qr_requests', JSON.stringify(offline));
+                window.customAlert('Đặt món ngoại tuyến', 'Mất mạng! Yêu cầu được lưu cục bộ và sẽ tự động gửi khi kết nối internet được khôi phục.', 'danger');
+                cart = {};
+                renderCart();
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitRequest');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang gửi...`;
+
+            const items = {};
+            const notes = {};
+            Object.keys(cart).forEach(id => {
+                items[id] = cart[id].quantity;
+                notes[id] = cart[id].note;
+            });
+
+            try {
+                const response = await fetch(`/qr/order/${tableNumber}/request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items, notes })
+                });
+                const data = await response.json();
+                window.customAlert('Thông báo', data.message, data.success ? 'success' : 'danger');
+                if (data.success) {
+                    cart = {};
+                    renderCart();
+                }
+            } catch (err) {
+                window.customAlert('Lỗi', 'Lỗi kết nối máy chủ!', 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> GỬI YÊU CẦU GỌI MÓN`;
+            }
+        }
+
+        async function submitDirectOrder() {
+            if (Object.keys(cart).length === 0) return;
+
+            const btn = document.getElementById('btnSubmitRequest');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Đang gửi bếp...`;
+
+            const items = {};
+            const notes = {};
+            Object.keys(cart).forEach(id => {
+                items[id] = cart[id].quantity;
+                notes[id] = cart[id].note;
+            });
+
+            try {
+                const response = await fetch(`/customer/order/${tableNumber}/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items, notes })
+                });
+                const data = await response.json();
+                window.customAlert('Thông báo', data.message, data.success ? 'success' : 'danger', function() {
+                    if (data.success) {
+                        cart = {};
+                        renderCart();
+                        location.href = '/customer/select-table';
+                    }
+                });
+            } catch (err) {
+                window.customAlert('Lỗi', 'Lỗi kết nối máy chủ!', 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> GỬI BẾP CHẾ BIẾN NGAY`;
+            }
+        }
+
+        async function syncOfflineRequests() {
+            const offline = JSON.parse(localStorage.getItem('offline_qr_requests') || '[]');
+            if (offline.length === 0) return;
+
+            for (const req of offline) {
+                const items = {};
+                const notes = {};
+                Object.keys(req.cart).forEach(id => {
+                    items[id] = req.cart[id].quantity;
+                    notes[id] = req.cart[id].note;
+                });
+                try {
+                    await fetch(`/qr/order/${req.tableNumber}/request`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ items, notes })
+                    });
+                } catch (e) {}
+            }
+            localStorage.removeItem('offline_qr_requests');
+            window.customAlert('Đồng bộ dữ liệu', 'Đã đồng bộ hóa thành công các đơn đặt món gửi offline!', 'success');
+        }
+
+        function handlePaymentRequest(event) {
+            event.preventDefault();
+            const form = document.getElementById('payment-form');
+            window.customConfirm(
+                "Yêu cầu thanh toán",
+                "Bạn có chắc chắn muốn báo nhân viên chuẩn bị hóa đơn và đến thanh toán không?",
+                function() {
+                    form.submit();
+                }
+            );
+            return false;
+        }
+
+        // Initialize state
+        updateNetworkStatus();
+
+        function filterCategory(cat) {
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.className = "cat-btn bg-slate-100 hover:bg-slate-200 text-gray-600 font-semibold px-4 py-2 rounded-xl text-sm transition-all";
+            });
+            document.getElementById('catBtn-' + cat).className = "cat-btn bg-orange-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all";
+
+            document.querySelectorAll('.menu-item-card').forEach(card => {
+                const itemCat = card.getAttribute('data-category');
+                if (cat === 'ALL' || itemCat === cat) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+            filterMenu();
+        }
+
+        function filterMenu() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const activeCatBtn = document.querySelector('.cat-btn.bg-orange-500');
+            const activeCat = activeCatBtn.id.replace('catBtn-', '');
+
+            document.querySelectorAll('.menu-item-card').forEach(card => {
+                const name = card.getAttribute('data-name').toLowerCase();
+                const itemCat = card.getAttribute('data-category');
+                
+                const matchesSearch = name.includes(query) || getAcronym(name).includes(query);
+                const matchesCat = activeCat === 'ALL' || itemCat === activeCat;
+
+                if (matchesSearch && matchesCat) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        function getAcronym(str) {
+            return str.split(" ")
+                      .map(w => w.charAt(0))
+                      .join("")
+                      .toLowerCase();
+        }
+    </script>
+    <div th:replace="~{base :: modal_system}"></div>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:fragment="header(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} + ' - RMS'"></title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSRF Tokens -->
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
+    
+    <script>
+        // Global fetch interceptor to automatically attach CSRF token for AJAX POST/PUT/DELETE
+        (function() {
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+            
+            if (csrfToken && csrfHeader) {
+                const originalFetch = window.fetch;
+                window.fetch = function() {
+                    let [resource, config] = arguments;
+                    if(config === undefined) {
+                        config = {};
+                    }
+                    if(config.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(config.method.toUpperCase())) {
+                        config.headers = config.headers || {};
+                        config.headers[csrfHeader] = csrfToken;
+                    }
+                    return originalFetch(resource, config);
+                };
+            }
+        })();
+    </script>
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f8fafc;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar Component -->
+    <nav th:fragment="navbar" class="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-2xl font-extrabold text-orange-500 tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-utensils"></i> RMS
+                        </span>
+                        <span class="hidden sm:block ml-2 text-sm text-gray-400 font-semibold uppercase tracking-wider">Restaurant System</span>
+                    </div>
+                    <!-- Navigation links -->
+                    <div class="hidden md:ml-8 md:flex md:space-x-4" th:if="${user != null}">
+                        <!-- For Customer (USER) -->
+                        <a th:if="${user.role.name() == 'USER'}" href="/customer/select-table" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-table-cells mr-1.5"></i> Chọn Bàn
+                        </a>
+                        <a th:if="${user.role.name() == 'USER'}" href="/user/menu" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-utensils mr-1.5"></i> Thực đơn
+                        </a>
+                        <a th:if="${user.role.name() == 'USER'}" href="/user/favorites" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-heart mr-1.5 text-rose-500"></i> Yêu thích
+                        </a>
+                        <a th:if="${user.role.name() == 'USER'}" href="/user/cart" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-cart-shopping mr-1.5 text-amber-500"></i> Giỏ hàng
+                        </a>
+                        <a th:if="${user.role.name() == 'USER'}" href="/user/profile" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-user-gear mr-1.5"></i> Tài khoản
+                        </a>
+
+                        <!-- For Admin / Staff -->
+                        <a th:if="${user.role.name() == 'WAITER'}" href="/tables" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-table-cells-large mr-1.5"></i> Sơ đồ bàn
+                        </a>
+                        <a th:if="${user.role.name() == 'KITCHEN'}" href="/kitchen" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-fire-burner mr-1.5"></i> Bếp KDS
+                        </a>
+                        <a th:if="${user.role.name() == 'CASHIER'}" href="/admin/pos" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-cash-register mr-1.5"></i> POS Thu ngân
+                        </a>
+                        <a th:if="${user.role.name() == 'CASHIER'}" href="/admin/bills" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-file-invoice-dollar mr-1.5"></i> Lịch sử HĐ
+                        </a>
+                        
+                        <!-- For Admin ONLY -->
+                        <a th:if="${user.role.name() == 'ADMIN'}" href="/admin/dashboard" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-chart-line mr-1.5"></i> Báo cáo
+                        </a>
+                        <a th:if="${user.role.name() == 'ADMIN'}" href="/admin/users" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-users mr-1.5"></i> Tài khoản
+                        </a>
+                        <a th:if="${user.role.name() == 'ADMIN'}" href="/admin/menu" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-book-open mr-1.5"></i> Thực đơn
+                        </a>
+                        <a th:if="${user.role.name() == 'ADMIN'}" href="/admin/inventory" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-boxes-stacked mr-1.5"></i> Kho hàng
+                        </a>
+                        <a th:if="${user.role.name() == 'ADMIN'}" href="/admin/bills" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-file-invoice-dollar mr-1.5"></i> Lịch sử HĐ
+                        </a>
+                        <a th:if="${user.role.name() == 'ADMIN'}" href="/admin/vouchers" class="text-gray-600 hover:bg-orange-50 hover:text-orange-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-tags mr-1.5"></i> Khuyến mãi
+                        </a>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right" th:if="${user != null}">
+                        <div class="text-sm font-bold text-gray-800" th:text="${user.username}"></div>
+                        <div class="text-[10px] uppercase font-extrabold tracking-wider text-orange-500" th:text="${user.role}"></div>
+                    </div>
+                    <form th:action="@{/logout}" method="post" class="inline">
+                        <button type="submit" class="bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200">
+                            <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Custom Modal System -->
+        <div th:fragment="modal_system">
+            <div id="globalModalContainer" class="fixed inset-0 z-50 overflow-y-auto hidden flex items-center justify-center p-4">
+                <!-- Backdrop overlay -->
+                <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"></div>
+
+                <!-- Modal Box -->
+                <div class="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 border border-slate-100 transform transition-all duration-300 scale-95 opacity-0" id="globalModalBox">
+                    <!-- Icon and Header -->
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-lg animate-bounce" id="globalModalIcon">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </div>
+                        <h3 class="text-base font-extrabold text-gray-900" id="globalModalTitle">Thông báo</h3>
+                    </div>
+                    
+                    <!-- Message Content -->
+                    <p class="text-sm text-gray-500 mb-6 leading-relaxed" id="globalModalMessage">Nội dung thông báo...</p>
+                    
+                    <!-- Optional Input (for Prompts) -->
+                    <div id="globalModalInputContainer" class="hidden mb-6">
+                        <input type="text" id="globalModalInput" 
+                               class="block w-full rounded-xl border border-gray-200 py-2.5 px-4 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                               placeholder="Nhập giá trị...">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-end gap-2 text-xs">
+                        <button type="button" id="globalModalCancelBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-gray-700 rounded-lg font-bold transition-colors hidden">
+                            Hủy bỏ
+                        </button>
+                        <button type="button" id="globalModalConfirmBtn" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold transition-colors">
+                            Xác nhận
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                const modalContainer = document.getElementById('globalModalContainer');
+                const modalBox = document.getElementById('globalModalBox');
+                const modalTitle = document.getElementById('globalModalTitle');
+                const modalMessage = document.getElementById('globalModalMessage');
+                const modalIcon = document.getElementById('globalModalIcon');
+                const modalInputContainer = document.getElementById('globalModalInputContainer');
+                const modalInput = document.getElementById('globalModalInput');
+                const modalCancelBtn = document.getElementById('globalModalCancelBtn');
+                const modalConfirmBtn = document.getElementById('globalModalConfirmBtn');
+
+                let confirmCallback = null;
+                let cancelCallback = null;
+                let isPromptModal = false;
+
+                function showModal({ title, message, type = 'info', showInput = false, inputPlaceholder = '', showCancel = false, onConfirm = null, onCancel = null }) {
+                    modalTitle.innerText = title || "Thông báo";
+                    modalMessage.innerText = message || "";
+                    isPromptModal = showInput;
+                    
+                    // Icon styles based on type
+                    if (type === 'danger') {
+                        modalIcon.className = "w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg";
+                        modalIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                        modalConfirmBtn.className = "px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg font-bold transition-colors";
+                    } else if (type === 'success') {
+                        modalIcon.className = "w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg";
+                        modalIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                        modalConfirmBtn.className = "px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold transition-colors";
+                    } else {
+                        modalIcon.className = "w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-lg";
+                        modalIcon.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+                        modalConfirmBtn.className = "px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold transition-colors";
+                    }
+
+                    // Input prompt config
+                    if (showInput) {
+                        modalInputContainer.classList.remove('hidden');
+                        modalInput.value = "";
+                        modalInput.placeholder = inputPlaceholder || "Nhập giá trị...";
+                        setTimeout(() => modalInput.focus(), 150);
+                    } else {
+                        modalInputContainer.classList.add('hidden');
+                    }
+
+                    // Cancel button config
+                    if (showCancel) {
+                        modalCancelBtn.classList.remove('hidden');
+                    } else {
+                        modalCancelBtn.classList.add('hidden');
+                    }
+
+                    confirmCallback = onConfirm;
+                    cancelCallback = onCancel;
+
+                    // Show animation
+                    modalContainer.classList.remove('hidden');
+                    setTimeout(() => {
+                        modalBox.classList.remove('scale-95', 'opacity-0');
+                        modalBox.classList.add('scale-100', 'opacity-100');
+                    }, 10);
+                }
+
+                function closeModal() {
+                    modalBox.classList.remove('scale-100', 'opacity-100');
+                    modalBox.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => {
+                        modalContainer.classList.add('hidden');
+                    }, 150);
+                }
+
+                modalConfirmBtn.onclick = function() {
+                    let value = modalInput.value;
+                    closeModal();
+                    if (confirmCallback) confirmCallback(value);
+                };
+
+                modalCancelBtn.onclick = function() {
+                    closeModal();
+                    if (cancelCallback) cancelCallback();
+                };
+
+                // Helper global functions to drop-in replace built-in alert/confirm/prompt
+                window.customAlert = function(title, message, type = 'info', onOk = null) {
+                    showModal({ title, message, type, showCancel: false, onConfirm: onOk });
+                };
+
+                window.customConfirm = function(title, message, onYes, onNo = null, type = 'info') {
+                    showModal({ title, message, type, showCancel: true, onConfirm: onYes, onCancel: onNo });
+                };
+
+                window.customPrompt = function(title, message, placeholder, onYes, onNo = null) {
+                    showModal({ title, message, type: 'info', showInput: true, inputPlaceholder: placeholder, showCancel: true, onConfirm: onYes, onCancel: onNo });
+                };
+            </script>
+        </div>
+    </nav>
+</body>
+</html>

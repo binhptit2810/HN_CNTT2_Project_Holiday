@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{base :: header('RMS KDS - Nhà Bếp')}"></head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <!-- Header navigation bar -->
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl font-black text-orange-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-fire-burner"></i> RMS KDS
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest bg-slate-800 px-2.5 py-1 rounded ml-2">Kitchen TV Monitor</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs text-slate-400 font-bold"><i class="fa-solid fa-circle text-emerald-500 mr-1 animate-pulse"></i> Bếp đang kết nối</span>
+                    <form th:action="@{/logout}" method="post" class="inline">
+                        <button type="submit" class="bg-slate-800 hover:bg-red-900 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
+                            <i class="fa-solid fa-right-from-bracket mr-1"></i> Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+        
+        <!-- Error Alert -->
+        <div th:if="${error != null}" class="bg-red-950/40 border-l-4 border-red-500 p-4 rounded-xl flex items-center gap-3 shadow-lg">
+            <i class="fa-solid fa-triangle-exclamation text-red-500 text-xl"></i>
+            <span class="text-sm font-bold text-red-400" th:text="${error}"></span>
+        </div>
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-orange-500"></i> Bảng điều phối món ăn
+                </h1>
+                <p class="text-xs text-slate-400 mt-1">Món ăn chế biến theo thứ tự thời gian gọi món (FIFO - Sắp xếp bắt buộc).</p>
+            </div>
+            
+            <button onclick="location.reload()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all">
+                <i class="fa-solid fa-rotate-right"></i> Đồng bộ KDS
+            </button>
+        </div>
+
+        <!-- Order Items Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            
+            <div th:each="detail : ${details}" 
+                 class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col justify-between shadow-xl h-96 transition-all duration-200"
+                 th:classappend="${detail.status.name() == 'COOKING' ? 'border-blue-500/70 ring-1 ring-blue-500/30' : ''}"
+                 th:id="'detailCard-' + ${detail.id}">
+                
+                <!-- Card Header -->
+                <div class="p-4 bg-slate-950 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-black text-white" th:text="'BÀN #' + ${detail.order.tableNumber}"></h2>
+                        <span class="text-[10px] text-slate-400 font-bold block mt-0.5" 
+                              th:text="'Giờ đặt: ' + ${#temporals.format(detail.createdAt != null ? detail.createdAt : detail.order.createdAt, 'HH:mm:ss')}"></span>
+                    </div>
+                    <div>
+                        <!-- Active Timer -->
+                        <span class="wait-timer text-xs font-extrabold px-3 py-1 rounded-xl bg-slate-800 text-slate-300"
+                              th:data-created="${detail.createdAt != null ? detail.createdAt : detail.order.createdAt}">
+                            0 Phút
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                        <!-- Dish Name (Huge text) -->
+                        <h1 class="text-3xl font-black text-white leading-tight" th:text="${detail.menuItem.name}"></h1>
+                        <!-- Quantity (Huge text) -->
+                        <span class="text-4xl font-black text-orange-500 mt-2 block" th:text="'SL: x' + ${detail.quantity}"></span>
+                    </div>
+                    
+                    <!-- Customer Note -->
+                    <div th:if="${detail.note != null && detail.note != ''}" 
+                         class="mt-4 p-3 bg-red-950/20 border-l-4 border-red-500 rounded text-rose-400 font-bold italic text-sm">
+                        <i class="fa-solid fa-comment-dots mr-1"></i> Ghi chú: <span th:text="${detail.note}"></span>
+                    </div>
+                </div>
+
+                <!-- Card Action Footer -->
+                <div class="p-4 bg-slate-950/40 border-t border-slate-800 flex gap-2">
+                    <form th:action="@{/kitchen/detail/update-status}" method="POST" class="flex-1 flex gap-2"
+                          th:id="'form-kitchen-' + ${detail.id}">
+                        <input type="hidden" name="detailId" th:value="${detail.id}">
+                        
+                        <!-- PENDING -> COOKING -->
+                        <button type="submit" name="status" value="COOKING" th:if="${detail.status.name() == 'PENDING'}"
+                                class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs transition-colors flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-fire mr-1"></i> Nhận nấu
+                        </button>
+
+                        <!-- COOKING -> READY -->
+                        <button type="submit" name="status" value="READY" th:if="${detail.status.name() == 'COOKING'}"
+                                class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs transition-colors flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-circle-check mr-1"></i> Hoàn thành
+                        </button>
+
+                        <!-- Already READY, waiting 30s to disappear -->
+                        <div th:if="${detail.status.name() == 'READY'}" 
+                             class="flex-1 py-3 bg-slate-800 text-slate-400 font-bold rounded-2xl text-xs flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang chờ bê...
+                        </div>
+
+                        <!-- Cancel/Out of stock -->
+                        <button type="button"
+                                class="px-4 bg-slate-800 hover:bg-red-950 text-red-500 hover:text-white font-bold rounded-2xl transition-colors" 
+                                title="Báo hết món/Hủy món" 
+                                th:onclick="'confirmCancelItem(' + ${detail.id} + ')'">
+                            <i class="fa-solid fa-ban"></i>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${#lists.isEmpty(details)}" 
+                 class="col-span-full bg-slate-950/40 border border-dashed border-slate-800 rounded-3xl py-24 text-center text-slate-500 flex flex-col items-center justify-center gap-3">
+                <i class="fa-solid fa-circle-check text-5xl text-emerald-500/80 mb-2"></i>
+                <h3 class="text-xl font-bold text-white">Bếp trống trơn!</h3>
+                <p class="text-xs">Hiện tại chưa có món ăn nào trong danh sách chế biến.</p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Script to update timers and auto-refresh KDS list -->
+    <script th:inline="javascript">
+        // Automatic refresh every 8 seconds
+        setInterval(() => {
+            location.reload();
+        }, 8000);
+
+        function updateTimers() {
+            document.querySelectorAll('.wait-timer').forEach(el => {
+                const createdStr = el.getAttribute('th:data-created') || el.getAttribute('data-created');
+                if (!createdStr) return;
+
+                const createdDate = new Date(createdStr);
+                const diffMs = new Date() - createdDate;
+                const diffMin = Math.floor(diffMs / 60000);
+
+                el.innerText = diffMin + " Phút";
+
+                if (diffMin >= 15) {
+                    el.className = "wait-timer text-xs font-extrabold px-3 py-1 rounded-xl bg-red-600 text-white animate-pulse";
+                }
+            });
+        }
+
+        // Initialize timers
+        updateTimers();
+        setInterval(updateTimers, 30000); // update every 30 seconds
+
+        // Auto-fade ready details after 30s
+        /*[# th:each="detail : ${details}"]*/
+        /*[# th:if="${detail.status.name() == 'READY'}"]*/
+        setTimeout(() => {
+            const card = document.getElementById('detailCard-[[${detail.id}]]');
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                card.style.transition = 'all 1s ease-out';
+                setTimeout(() => card.remove(), 1000);
+            }
+        }, 30000);
+        /*[/]*/
+        /*[/]*/
+
+        function confirmCancelItem(detailId) {
+            window.customConfirm(
+                "Báo hết món / Hủy món",
+                "Bạn chắc chắn muốn báo HẾT MÓN này? Thao tác này sẽ cập nhật thực đơn thành Hết hàng!",
+                function() {
+                    const form = document.getElementById('form-kitchen-' + detailId);
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'status';
+                    hiddenInput.value = 'CANCELLED';
+                    form.appendChild(hiddenInput);
+                    form.submit();
+                },
+                null,
+                'danger'
+            );
+        }
+    </script>
+    <div th:replace="~{base :: modal_system}"></div>
+</body>
+</html>

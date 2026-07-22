@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{base :: header('Đăng nhập')}"></head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-white/40">
+        <div class="text-center mb-8">
+            <span class="text-4xl font-black text-orange-500 tracking-wider flex justify-center items-center gap-2">
+                <i class="fa-solid fa-utensils"></i> RMS
+            </span>
+            <h2 class="mt-3 text-2xl font-bold text-gray-900">Đăng nhập hệ thống</h2>
+            <p class="text-xs text-gray-400 font-semibold uppercase mt-1">Hệ thống quản lý nhà hàng thông minh</p>
+        </div>
+
+        <!-- Server-side Error Notification -->
+        <div th:if="${error != null}" class="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-red-500 text-lg"></i>
+            <span class="text-sm font-medium text-red-700" th:text="${error}"></span>
+        </div>
+
+        <!-- Server-side Success Notification -->
+        <div th:if="${success != null}" class="mb-4 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-green-500 text-lg"></i>
+            <span class="text-sm font-medium text-green-700" th:text="${success}"></span>
+        </div>
+
+        <form id="loginForm" th:action="@{/login}" method="POST" class="space-y-5" novalidate>
+            <!-- Username -->
+            <div>
+                <label for="username" class="block text-sm font-semibold text-gray-700 mb-1">Tài khoản</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+                    <input type="text" id="username" name="username"
+                           class="pl-10 block w-full rounded-xl border border-gray-200 py-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-200"
+                           placeholder="Nhập tên tài khoản..."
+                           autocomplete="username">
+                </div>
+                <p id="username-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span></span>
+                </p>
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label for="password" class="block text-sm font-semibold text-gray-700 mb-1">Mật khẩu</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" id="password" name="password"
+                           class="pl-10 block w-full rounded-xl border border-gray-200 py-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-200"
+                           placeholder="••••••••"
+                           autocomplete="current-password">
+                    <!-- Toggle show/hide password -->
+                    <button type="button" id="togglePassword"
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-orange-500 transition-colors">
+                        <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+                <p id="password-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span></span>
+                </p>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Đăng nhập
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-sm text-gray-500">
+            Chưa có tài khoản? <a href="/register" class="text-orange-500 font-bold hover:underline">Đăng ký ngay</a>
+        </div>
+    </div>
+
+    <script>
+        // ── Helpers ──────────────────────────────────────────────
+        const usernameInput  = document.getElementById('username');
+        const passwordInput  = document.getElementById('password');
+        const usernameError  = document.getElementById('username-error');
+        const passwordError  = document.getElementById('password-error');
+        const togglePassword = document.getElementById('togglePassword');
+        const eyeIcon        = document.getElementById('eyeIcon');
+
+        function showError(errorEl, inputEl, msg) {
+            errorEl.querySelector('span').textContent = msg;
+            errorEl.classList.remove('hidden');
+            inputEl.classList.add('border-red-400', 'focus:border-red-500', 'focus:ring-red-500');
+            inputEl.classList.remove('border-gray-200', 'focus:border-orange-500', 'focus:ring-orange-500');
+        }
+
+        function clearError(errorEl, inputEl) {
+            errorEl.classList.add('hidden');
+            errorEl.querySelector('span').textContent = '';
+            inputEl.classList.remove('border-red-400', 'focus:border-red-500', 'focus:ring-red-500');
+            inputEl.classList.add('border-gray-200', 'focus:border-orange-500', 'focus:ring-orange-500');
+        }
+
+        // ── Realtime: clear error while typing ───────────────────
+        usernameInput.addEventListener('input', () => clearError(usernameError, usernameInput));
+        passwordInput.addEventListener('input', () => clearError(passwordError, passwordInput));
+
+        // ── Validate on blur ──────────────────────────────────────
+        usernameInput.addEventListener('blur', () => validateUsername());
+        passwordInput.addEventListener('blur', () => validatePassword());
+
+        function validateUsername() {
+            const val = usernameInput.value.trim();
+            if (!val) {
+                showError(usernameError, usernameInput, 'Tên tài khoản không được để trống!');
+                return false;
+            }
+            clearError(usernameError, usernameInput);
+            return true;
+        }
+
+        function validatePassword() {
+            const val = passwordInput.value;
+            if (!val) {
+                showError(passwordError, passwordInput, 'Mật khẩu không được để trống!');
+                return false;
+            }
+            clearError(passwordError, passwordInput);
+            return true;
+        }
+
+        // ── Toggle password visibility ────────────────────────────
+        togglePassword.addEventListener('click', () => {
+            const isHidden = passwordInput.type === 'password';
+            passwordInput.type = isHidden ? 'text' : 'password';
+            eyeIcon.className = isHidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+        });
+
+        // ── Form submit ───────────────────────────────────────────
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const u = validateUsername();
+            const p = validatePassword();
+            if (!u || !p) {
+                e.preventDefault();
+            }
+        });
+    </script>
+
+</body>
+</html>

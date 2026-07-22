@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{base :: header('Báo cáo thống kê')}"></head>
+<body class="bg-slate-50 min-h-screen">
+
+    <nav th:replace="~{base :: navbar}"></nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Báo cáo & Thống kê doanh thu</h1>
+            <p class="text-sm text-gray-500 mt-1">Phân tích kết quả kinh doanh và theo dõi tình trạng kho nguyên liệu.</p>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Revenue Card -->
+            <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-xs uppercase font-extrabold tracking-wider text-gray-400">Doanh thu tháng này</span>
+                    <h3 class="text-3xl font-extrabold text-gray-950 mt-1.5"
+                        th:text="${#numbers.formatDecimal(monthlyRevenue, 0, 'COMMA', 0, 'POINT')} + ' đ'"></h3>
+                </div>
+                <div class="bg-emerald-50 text-emerald-600 w-12 h-12 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-money-bill-trend-up"></i>
+                </div>
+            </div>
+
+            <!-- Bills Card -->
+            <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-xs uppercase font-extrabold tracking-wider text-gray-400">Hóa đơn thanh toán</span>
+                    <h3 class="text-3xl font-extrabold text-gray-950 mt-1.5"
+                        th:text="${monthlyBillCount} + ' hóa đơn'"></h3>
+                </div>
+                <div class="bg-blue-50 text-blue-600 w-12 h-12 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-receipt"></i>
+                </div>
+            </div>
+
+            <!-- Average Bill Value Card -->
+            <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex items-center justify-between">
+                <div>
+                    <span class="text-xs uppercase font-extrabold tracking-wider text-gray-400">Giá trị trung bình/HĐ</span>
+                    <h3 class="text-3xl font-extrabold text-gray-950 mt-1.5"
+                        th:text="${monthlyBillCount > 0 ? #numbers.formatDecimal(monthlyRevenue / monthlyBillCount, 0, 'COMMA', 0, 'POINT') + ' đ' : '0 đ'}"></h3>
+                </div>
+                <div class="bg-orange-50 text-orange-600 w-12 h-12 rounded-xl flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Side: Sales Charts (2/3 width) -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <!-- Sales Chart Panel -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-area text-orange-500"></i> Xu hướng doanh thu theo ngày
+                    </h3>
+                    <div class="h-80">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Low Stock Alert Banner -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation text-amber-500"></i> Cảnh báo nguyên liệu sắp hết
+                    </h3>
+                    
+                    <div th:if="${#lists.isEmpty(lowStock)}" class="text-center py-6 text-emerald-600 font-semibold bg-emerald-50 rounded-xl">
+                        <i class="fa-solid fa-shield-halved mr-1"></i> Tất cả nguyên liệu đều ở mức tồn an toàn!
+                    </div>
+
+                    <div th:if="${not #lists.isEmpty(lowStock)}" class="overflow-x-auto">
+                        <table class="min-w-full text-sm text-left">
+                            <thead class="text-xs uppercase font-extrabold text-gray-400 bg-gray-50/60 rounded-xl">
+                                <tr>
+                                    <th class="px-4 py-3">Tên nguyên liệu</th>
+                                    <th class="px-4 py-3">Tồn kho</th>
+                                    <th class="px-4 py-3">Định mức tối thiểu</th>
+                                    <th class="px-4 py-3">Đơn vị</th>
+                                    <th class="px-4 py-3">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr th:each="ing : ${lowStock}" class="hover:bg-gray-50/40">
+                                    <td class="px-4 py-3.5 font-bold text-gray-800" th:text="${ing.name}"></td>
+                                    <td class="px-4 py-3.5 font-extrabold text-rose-600" th:text="${ing.quantityInStock}"></td>
+                                    <td class="px-4 py-3.5 text-gray-500" th:text="${ing.reorderLevel}"></td>
+                                    <td class="px-4 py-3.5 text-gray-500" th:text="${ing.unit}"></td>
+                                    <td class="px-4 py-3.5">
+                                        <span class="bg-red-100 text-red-700 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md">
+                                            Cần nhập hàng
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Top selling items & Details (1/3 width) -->
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-fit">
+                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-fire text-orange-500"></i> Top món ăn bán chạy tháng này
+                </h3>
+
+                <div th:if="${#maps.isEmpty(topItems)}" class="text-center py-10 text-gray-400 text-sm">
+                    Chưa có doanh số ghi nhận.
+                </div>
+
+                <div th:if="${not #maps.isEmpty(topItems)}" class="space-y-4">
+                    <!-- Chart Canvas -->
+                    <div class="h-48 mb-6">
+                        <canvas id="topItemsChart"></canvas>
+                    </div>
+                    <div th:each="entry, stat : ${topItems}" class="flex justify-between items-center bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black"
+                                  th:classappend="${
+                                      stat.index == 0 ? 'bg-amber-100 text-amber-700' : 
+                                      (stat.index == 1 ? 'bg-slate-200 text-slate-700' : 
+                                      (stat.index == 2 ? 'bg-amber-50 text-amber-600' : 'bg-gray-100 text-gray-500'))
+                                  }"
+                                  th:text="${stat.index + 1}"></span>
+                            <span class="font-bold text-gray-800 text-sm" th:text="${entry.key}"></span>
+                        </div>
+                        <span class="text-sm font-extrabold text-orange-600" th:text="${entry.value} + ' phần'"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Chart JS integration -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const labels = /*[[${chartLabels}]]*/ [];
+        const data = /*[[${chartData}]]*/ [];
+        
+        const topItemsLabels = /*[[${topItemsLabels}]]*/ [];
+        const topItemsData = /*[[${topItemsData}]]*/ [];
+        /*]]>*/
+
+        // 1. Line Chart for Revenue
+        const ctxRev = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctxRev, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Doanh thu (đ)',
+                    data: data,
+                    borderColor: 'rgb(249, 115, 22)',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: 'rgb(249, 115, 22)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toLocaleString('vi-VN') + ' đ';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('vi-VN') + ' đ';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 2. Doughnut Chart for Top Items
+        const ctxTop = document.getElementById('topItemsChart').getContext('2d');
+        new Chart(ctxTop, {
+            type: 'doughnut',
+            data: {
+                labels: topItemsLabels,
+                datasets: [{
+                    data: topItemsData,
+                    backgroundColor: [
+                        '#f97316', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 11, family: 'Outfit' }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+    </script>
+
+</body>
+</html>

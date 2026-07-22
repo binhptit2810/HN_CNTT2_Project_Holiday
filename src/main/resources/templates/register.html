@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{base :: header('Đăng ký tài khoản')}"></head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-100 min-h-screen flex items-center justify-center p-4 py-10">
+
+    <div class="max-w-lg w-full bg-white/80 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-white/40">
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <span class="text-4xl font-black text-orange-500 tracking-wider flex justify-center items-center gap-2">
+                <i class="fa-solid fa-utensils"></i> RMS
+            </span>
+            <h2 class="mt-3 text-2xl font-bold text-gray-900">Tạo tài khoản mới</h2>
+            <p class="text-xs text-gray-400 font-semibold uppercase mt-1">Đăng ký miễn phí – Đặt món trực tuyến</p>
+        </div>
+
+        <!-- Server-side error -->
+        <div th:if="${error != null}"
+             class="mb-5 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-red-500 text-lg flex-shrink-0"></i>
+            <span class="text-sm font-medium text-red-700" th:text="${error}"></span>
+        </div>
+
+        <!-- Server-side success -->
+        <div th:if="${success != null}"
+             class="mb-5 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-check text-green-500 text-lg flex-shrink-0"></i>
+            <span class="text-sm font-medium text-green-700" th:text="${success}"></span>
+        </div>
+
+        <form id="registerForm" th:action="@{/register}" method="POST" class="space-y-4" novalidate>
+            <input type="hidden" name="role" value="USER">
+
+            <!-- ── THÔNG TIN CÁ NHÂN ─────────────────────────── -->
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gray-400 pb-1 border-b border-gray-100">
+                Thông tin cá nhân
+            </p>
+
+            <!-- Họ và tên * -->
+            <div>
+                <label for="fullName" class="block text-sm font-semibold text-gray-700 mb-1">
+                    Họ và tên <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                        <i class="fa-solid fa-id-card"></i>
+                    </span>
+                    <input type="text" id="fullName" name="fullName"
+                           th:value="${prevFullName}"
+                           class="pl-10 block w-full rounded-xl border border-gray-200 py-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-200"
+                           placeholder="Nguyễn Văn A">
+                </div>
+                <p id="fullName-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i><span></span>
+                </p>
+            </div>
+
+            <!-- Số điện thoại * -->
+            <div>
+                <label for="phone" class="block text-sm font-semibold text-gray-700 mb-1">
+                    Số điện thoại <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                        <i class="fa-solid fa-phone"></i>
+                    </span>
+                    <input type="tel" id="phone" name="phone"
+                           th:value="${prevPhone}"
+                           class="pl-10 block w-full rounded-xl border border-gray-200 py-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-200"
+                           placeholder="0901234567" maxlength="11">
+                </div>
+                <p id="phone-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i><span></span>
+                </p>
+            </div>
+
+            <!-- Email (tuỳ chọn) -->
+            <div>
+                <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">
+                    Email
+                    <span class="ml-1 text-[10px] font-normal text-gray-400">(không bắt buộc)</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                        <i class="fa-solid fa-envelope"></i>
+                    </span>
+                    <input type="email" id="email" name="email"
+                           th:value="${prevEmail}"
+                           class="pl-10 block w-full rounded-xl border border-gray-200 py-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-200"
+                           placeholder="example@gmail.com" autocomplete="email">
+                </div>
+                <p id="email-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i><span></span>
+                </p>
+            </div>
+
+            <!-- Địa chỉ (tuỳ chọn) -->
+            <div>
+                <label for="address" class="block text-sm font-semibold text-gray-700 mb-1">
+                    Địa chỉ
+                    <span class="ml-1 text-[10px] font-normal text-gray-400">(không bắt buộc)</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute top-3 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </span>
+                    <textarea id="address" name="address" rows="2"
+                              th:text="${prevAddress}"
+                              class="pl-10 block w-full rounded-xl border border-gray-200 py-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-200 resize-none"
+                              placeholder="Số nhà, đường, phường/xã, quận/huyện..."></textarea>
+                </div>
+            </div>
+
+            <!-- ── THÔNG TIN ĐĂNG NHẬP ────────────────────────── -->
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gray-400 pb-1 border-b border-gray-100 !mt-6">
+                Thông tin đăng nhập
+            </p>
+
+            <!-- Tên tài khoản * -->
+            <div>
+                <label for="username" class="block text-sm font-semibold text-gray-700 mb-1">
+                    Tên tài khoản <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+                    <input type="text" id="username" name="username"
+                           th:value="${prevUsername}"
+                           class="pl-10 block w-full rounded-xl border border-gray-200 py-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-200"
+                           placeholder="Tên đăng nhập (không dấu, không khoảng cách)"
+                           autocomplete="username">
+                </div>
+                <p id="username-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i><span></span>
+                </p>
+            </div>
+
+            <!-- Mật khẩu * -->
+            <div>
+                <label for="password" class="block text-sm font-semibold text-gray-700 mb-1">
+                    Mật khẩu <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" id="password" name="password"
+                           class="pl-10 pr-10 block w-full rounded-xl border border-gray-200 py-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-200"
+                           placeholder="Ít nhất 4 ký tự"
+                           autocomplete="new-password">
+                    <button type="button" id="togglePassword"
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-orange-500 transition-colors">
+                        <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                    </button>
+                </div>
+                <p id="password-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i><span></span>
+                </p>
+            </div>
+
+            <!-- Xác nhận mật khẩu * -->
+            <div>
+                <label for="confirmPassword" class="block text-sm font-semibold text-gray-700 mb-1">
+                    Xác nhận mật khẩu <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </span>
+                    <!-- id đặt là confirmPassword để JS dùng pattern nhất quán: id + '-error' -->
+                    <input type="password" id="confirmPassword"
+                           class="pl-10 block w-full rounded-xl border border-gray-200 py-3 text-sm outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-200"
+                           placeholder="Nhập lại mật khẩu"
+                           autocomplete="new-password">
+                </div>
+                <!-- id = confirmPassword-error → khớp với getErr('confirmPassword') -->
+                <p id="confirmPassword-error" class="hidden mt-1.5 text-xs text-red-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-triangle-exclamation"></i><span></span>
+                </p>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" id="submitBtn"
+                    class="!mt-6 w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-user-plus" id="submitIcon"></i>
+                <span id="submitText">Đăng ký tài khoản</span>
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-sm text-gray-500">
+            Đã có tài khoản?
+            <a href="/login" class="text-orange-500 font-bold hover:underline">Quay lại Đăng nhập</a>
+        </div>
+    </div>
+
+    <script>
+    // ══════════════════════════════════════════════════════════
+    //  HELPER FUNCTIONS
+    // ══════════════════════════════════════════════════════════
+    function getEl(id) { return document.getElementById(id); }
+
+    // Quy ước: error element id = fieldId + '-error'
+    function getErr(fieldId) { return getEl(fieldId + '-error'); }
+
+    function showError(fieldId, msg) {
+        const input = getEl(fieldId);
+        const err   = getErr(fieldId);
+        if (!input || !err) return;
+
+        err.querySelector('span').textContent = msg;
+        err.classList.remove('hidden');
+        input.classList.add('border-red-400');
+        input.classList.remove('border-gray-200');
+    }
+
+    function clearError(fieldId) {
+        const input = getEl(fieldId);
+        const err   = getErr(fieldId);
+        if (!input || !err) return;
+
+        err.classList.add('hidden');
+        err.querySelector('span').textContent = '';
+        input.classList.remove('border-red-400');
+        input.classList.add('border-gray-200');
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  VALIDATORS  (trả về true = hợp lệ)
+    // ══════════════════════════════════════════════════════════
+    function validateFullName() {
+        const val = getEl('fullName').value.trim();
+        if (!val) { showError('fullName', 'Họ và tên không được để trống!'); return false; }
+        if (val.length < 2) { showError('fullName', 'Họ và tên phải có ít nhất 2 ký tự!'); return false; }
+        clearError('fullName');
+        return true;
+    }
+
+    function validatePhone() {
+        const val = getEl('phone').value.trim();
+        if (!val) { showError('phone', 'Số điện thoại không được để trống!'); return false; }
+        if (!/^\d+$/.test(val)) { showError('phone', 'Số điện thoại chỉ được chứa chữ số!'); return false; }
+        if (val.length < 10 || val.length > 11) { showError('phone', 'Số điện thoại phải có 10–11 chữ số!'); return false; }
+        clearError('phone');
+        return true;
+    }
+
+    function validateEmail() {
+        const val = getEl('email').value.trim();
+        if (!val) { clearError('email'); return true; }   // không bắt buộc
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+            showError('email', 'Địa chỉ email không đúng định dạng!');
+            return false;
+        }
+        clearError('email');
+        return true;
+    }
+
+    function validateUsername() {
+        const val = getEl('username').value.trim();
+        if (!val) { showError('username', 'Tên tài khoản không được để trống!'); return false; }
+        if (val.length < 3) { showError('username', 'Tên tài khoản phải có ít nhất 3 ký tự!'); return false; }
+        if (!/^[a-zA-Z0-9_]+$/.test(val)) {
+            showError('username', 'Tên tài khoản chỉ chứa chữ cái, số và dấu gạch dưới!');
+            return false;
+        }
+        clearError('username');
+        return true;
+    }
+
+    function validatePassword() {
+        const val = getEl('password').value;
+        if (!val) { showError('password', 'Mật khẩu không được để trống!'); return false; }
+        if (val.length < 4) { showError('password', 'Mật khẩu phải có ít nhất 4 ký tự!'); return false; }
+        clearError('password');
+        return true;
+    }
+
+    function validateConfirm() {
+        const val = getEl('confirmPassword').value;
+        if (!val) { showError('confirmPassword', 'Vui lòng xác nhận lại mật khẩu!'); return false; }
+        if (val !== getEl('password').value) {
+            showError('confirmPassword', 'Mật khẩu xác nhận không khớp!');
+            return false;
+        }
+        clearError('confirmPassword');
+        return true;
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  REALTIME: clear error khi người dùng bắt đầu gõ lại
+    // ══════════════════════════════════════════════════════════
+    ['fullName','phone','email','username','password','confirmPassword'].forEach(id => {
+        const el = getEl(id);
+        if (el) el.addEventListener('input', () => clearError(id));
+    });
+
+    // Chỉ cho nhập số trong ô phone
+    getEl('phone').addEventListener('input', function () {
+        this.value = this.value.replace(/[^\d]/g, '');
+    });
+
+    // Validate blur từng trường
+    getEl('fullName').addEventListener('blur',        validateFullName);
+    getEl('phone').addEventListener('blur',           validatePhone);
+    getEl('email').addEventListener('blur',           validateEmail);
+    getEl('username').addEventListener('blur',        validateUsername);
+    getEl('password').addEventListener('blur',        validatePassword);
+    getEl('confirmPassword').addEventListener('blur', validateConfirm);
+
+    // Khi password thay đổi → kiểm tra lại confirm nếu đã nhập
+    getEl('password').addEventListener('input', () => {
+        if (getEl('confirmPassword').value) validateConfirm();
+    });
+
+    // ══════════════════════════════════════════════════════════
+    //  TOGGLE ẨN/HIỆN MẬT KHẨU
+    // ══════════════════════════════════════════════════════════
+    getEl('togglePassword').addEventListener('click', () => {
+        const pw = getEl('password');
+        const isHidden = pw.type === 'password';
+        pw.type = isHidden ? 'text' : 'password';
+        getEl('eyeIcon').className = isHidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+
+    // ══════════════════════════════════════════════════════════
+    //  SUBMIT – kiểm tra toàn bộ trước khi gửi
+    // ══════════════════════════════════════════════════════════
+    getEl('registerForm').addEventListener('submit', function (e) {
+        // Chạy tất cả validators – KHÔNG dừng sớm để tất cả lỗi đều hiện cùng lúc
+        const results = [
+            validateFullName(),
+            validatePhone(),
+            validateEmail(),
+            validateUsername(),
+            validatePassword(),
+            validateConfirm()
+        ];
+
+        const allValid = results.every(Boolean);
+
+        if (!allValid) {
+            e.preventDefault(); // Chặn submit
+            // Cuộn tới lỗi đầu tiên
+            const firstError = document.querySelector('.text-red-600:not(.hidden)');
+            if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
+        // Loading state khi hợp lệ
+        const btn  = getEl('submitBtn');
+        const icon = getEl('submitIcon');
+        const txt  = getEl('submitText');
+        btn.disabled       = true;
+        icon.className     = 'fa-solid fa-spinner fa-spin';
+        txt.textContent    = 'Đang xử lý...';
+    });
+    </script>
+
+</body>
+</html>

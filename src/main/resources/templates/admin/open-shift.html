@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head th:replace="~{base :: header('Mở ca làm việc')}"></head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-slate-100 flex flex-col justify-between">
+        
+        <div class="text-center mb-6">
+            <span class="text-3xl font-black text-orange-500 tracking-wide flex justify-center items-center gap-2">
+                <i class="fa-solid fa-cash-register"></i> RMS POS
+            </span>
+            <h2 class="mt-2 text-2xl font-bold text-gray-950">Mở ca làm việc mới</h2>
+            <p class="text-xs text-gray-400 uppercase tracking-widest mt-1">Yêu cầu khai báo số tiền mặt đầu ca</p>
+        </div>
+
+        <!-- Alerts -->
+        <div th:if="${error != null}" class="mb-4 bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-amber-500 text-lg"></i>
+            <span class="text-sm font-semibold text-amber-800" th:text="${error}"></span>
+        </div>
+
+        <form th:action="@{/admin/pos/open-shift}" method="POST" class="space-y-6">
+            <div>
+                <label for="startBalanceInput" class="block text-sm font-semibold text-gray-700 mb-2">Số tiền mặt đầu ca (VNĐ)</label>
+                <div class="relative">
+                    <input type="number" id="startBalanceInput" name="startBalance" required min="0" value="1500000"
+                           class="w-full border border-gray-200 rounded-2xl py-4 px-5 text-2xl font-black text-slate-800 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all text-center">
+                </div>
+            </div>
+
+            <!-- Touch Quick Select Buttons -->
+            <div class="grid grid-cols-3 gap-2 mt-4 text-xs font-bold">
+                <button type="button" onclick="setBalance(1000000)" class="bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border border-slate-100 rounded-xl py-3 text-center transition-colors">1,000,000 đ</button>
+                <button type="button" onclick="setBalance(1500000)" class="bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border border-slate-100 rounded-xl py-3 text-center transition-colors">1,500,000 đ</button>
+                <button type="button" onclick="setBalance(2000000)" class="bg-slate-50 hover:bg-orange-50 hover:text-orange-600 border border-slate-100 rounded-xl py-3 text-center transition-colors">2,000,000 đ</button>
+            </div>
+
+            <div class="flex gap-2 pt-4">
+                <form th:action="@{/logout}" method="post" class="flex-1 flex">
+                    <button type="submit" class="w-full text-center py-4 bg-slate-100 hover:bg-slate-200 text-gray-700 font-bold rounded-2xl text-sm transition-colors">
+                        <i class="fa-solid fa-right-from-bracket mr-2"></i> Đăng xuất
+                    </button>
+                </form>
+                <button type="submit" 
+                        class="flex-1 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl text-sm transition-colors shadow-lg shadow-emerald-500/20">
+                    Xác nhận mở ca
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+    <script>
+        function setBalance(val) {
+            document.getElementById('startBalanceInput').value = val;
+        }
+    </script>
+
+</body>
+</html>
